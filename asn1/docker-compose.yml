@@ -1,0 +1,14 @@
+services:
+  python-app:
+    build: .
+    image: my/python
+    container_name: python1
+    ports:
+      - "80:8080"
+    volumes:
+      - /Users/hanna/cmpt353/asn1
+    stdin_open: true
+    tty: true
+    restart: no
+
+
