@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Posting System</title>
+  <style>
+    body {
+      font-family: 'Times New Roman', Times, serif;
+      margin: 20px;
+    }
+    h1, h2 {
+      color: #c859a3;
+    }
+    form {
+      margin-bottom: 20px;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+      margin-bottom: 10px;
+    }
+    #posts {
+      white-space: pre-wrap;
+      background: #fbd0ed;
+      padding: 10px;
+      border: 1px solid #fa8cce;
+    }
+    button {
+      padding: 10px 20px;
+      background: #d885c9;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #e26bd6;
+    }
+  </style>
+</head>
+<body>
+  <h1>Posting System</h1>
+  <form id="postForm">
+    <label for="topic">Topic:</label><br />
+    <input type="text" id="topic" name="topic" required /><br /><br />
+    <label for="data">Data:</label><br />
+    <textarea id="data" name="data" required></textarea><br />
+    <button type="submit">Submit</button>
+  </form>
+
+  <h2>Posts</h2>
+  <div id="posts">Loading...</div>
+
+  <script>
+    async function fetchPosts() {
+      const response = await fetch("http://localhost:3000/getposts");
+      const result = await response.json();
+      document.getElementById("posts").textContent = result.posts || "No posts available.";
+    }
+
+    document.getElementById("postForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const topic = document.getElementById("topic").value.trim();
+      const data = document.getElementById("data").value.trim();
+
+      if (!topic || !data) {
+        alert("Both topic and data are required.");
+        return;
+      }
+
+      const response = await fetch("http://localhost:3000/postmessage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic, data }),
+      });
+
+      if (response.ok) {
+        document.getElementById("postForm").reset();
+        await fetchPosts();
+      } else {
+        alert("Failed to save the post.");
+      }
+    });
+
+    fetchPosts();
+  </script>
+</body>
+</html>

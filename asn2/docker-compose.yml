@@ -1,0 +1,10 @@
+services:
+  web:
+    build: .
+    image: my/web
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+    command: ["node", "server.js"]
+    container_name: web1
