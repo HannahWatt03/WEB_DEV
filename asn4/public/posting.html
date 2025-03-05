@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post System</title>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <style>
+        /* Styling for the overall page */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+
+        /* Styling for the dialog form */
+        #newPostDialog {
+            padding: 20px;
+        }
+
+        /* Button styles */
+        #createPostBtn {
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background-color: #cc6dbc;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        #createPostBtn:hover {
+            background-color: #a1639f;
+        }
+
+        /* Styling for individual posts */
+        .post {
+            background-color: white;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .post:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .post h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .post p {
+            color: #555;
+        }
+
+        .addResponseBtn {
+            background-color: #e9add0;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .addResponseBtn:hover {
+            background-color: #d79dc9;
+        }
+
+        /* Barrier-like effect */
+        .post-barrier {
+            background-color: #e7e7e7;
+            border-left: 5px solid #d35eba;
+            padding-left: 20px;
+        }
+
+        .response {
+            background-color: #f9f9f9;
+            border-left: 4px solid #c65a99;
+            margin-top: 10px;
+            padding-left: 15px;
+            margin-bottom: 5px;
+        }
+
+        .timestamp {
+            font-size: 0.9em;
+            color: #888;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- New Post Form (without a submit button) -->
+    <div id="newPostDialog" title="Create New Post">
+        <form id="newPostForm">
+            <label for="topic">Topic</label><br>
+            <input type="text" id="topic" name="topic" required><br>
+            <label for="data">Post Data</label><br>
+            <textarea id="data" name="data" required></textarea><br>
+        </form>
+    </div>
+
+    <!-- Button to trigger the creation of a new post -->
+    <button id="createPostBtn">Create New Post</button>
+
+    <div id="postsContainer"></div>
+
+    <script>
+        // Open the dialog for creating a post
+        $("#createPostBtn").click(function() {
+            // Open the dialog where the user can input topic and data
+            $("#newPostDialog").dialog("open");
+        });
+
+        // Initialize dialog for new post form
+        $("#newPostDialog").dialog({
+            autoOpen: false, // Start the dialog closed
+            modal: true,
+            buttons: {
+                "Create Post": function() {
+                    const topic = $("#topic").val();
+                    const data = $("#data").val();
+
+                    // Send the POST request to create a new post
+                    $.ajax({
+                        url: '/submit-post',
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ title: topic, content: data }),
+                        success: function(response) {
+                            loadPosts();
+                            // Close the dialog after successful post creation
+                            $("#newPostDialog").dialog("close");
+                        }
+                    });
+                }
+            }
+        });
+
+        // Load and display posts and responses
+        function loadPosts() {
+            $.get('/alldata', function(posts) {
+                $('#postsContainer').empty();
+                posts.forEach(post => {
+                    const postHtml = `
+                        <div class="post post-barrier">
+                            <h3>${post.title}</h3>
+                            <p>${post.content}</p>
+                            <div class="timestamp">Posted at: ${new Date(post.timestamp).toLocaleString()}</div>
+                            <button class="addResponseBtn" data-postid="${post.id}">Add Response</button>
+                            <div class="responses">
+                                ${post.responses.map(response => `
+                                    <div class="response">
+                                        <p>${response.data}</p>
+                                        <div class="timestamp">Responded at: ${new Date(response.timestamp).toLocaleString()}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                    $('#postsContainer').append(postHtml);
+                });
+            });
+        }
+
+        // Initial load of posts
+        loadPosts();
+
+        // Add response
+        $(document).on('click', '.addResponseBtn', function() {
+            const postId = $(this).data('postid');
+            const responseData = prompt('Enter your response:');
+            if (responseData) {
+                $.ajax({
+                    url: '/postresponse',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ postId: postId, data: responseData }),
+                    success: function() {
+                        loadPosts(); // Reload posts after response is added
+                    },
+                    error: function(err) {
+                      console.error('Error submitting response:', err);
+                      alert('Failed to submit response.');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
